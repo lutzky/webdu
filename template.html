@@ -1,0 +1,22 @@
+<html>
+  <head>
+    <title>WebDU</title>
+  </head>
+  <body>
+    <h1>WebDU - {{.Path}}</h1>
+    <table>
+      <tr>
+        <td><a href="?path={{$.Parent}}">..</a></td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+      </tr>
+      {{- range .Report}}
+      <tr>
+        <td><a href="?path={{$.Path}}/{{.Name}}">{{.Name}}</a></td>
+        <td>{{.Size}}</td>
+        <td>{{.Percentage}}</td>
+      </tr>
+      {{- end}}
+    </table>
+  </body>
+</html>
