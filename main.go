@@ -10,15 +10,20 @@ import (
 	"os"
 	"path"
 	"sort"
+	"time"
 
-	humanize "github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize"
+	"github.com/patrickmn/go-cache"
 )
 
 var (
-	stdout   = flag.Bool("stdout", false, "Output root dir to stdout and quit")
-	basePath = flag.String("base_path", ".", "Base path")
-	port     = flag.Int("port", 8099, "Listening port")
+	stdout        = flag.Bool("stdout", false, "Output root dir to stdout and quit")
+	basePath      = flag.String("base_path", ".", "Base path")
+	port          = flag.Int("port", 8099, "Listening port")
+	cacheDuration = flag.Duration("cache_duration", 30*time.Second, "Cache duration")
 )
+
+var pathCache *cache.Cache
 
 type reportEntry struct {
 	name  string
@@ -37,6 +42,10 @@ func (r report) sum() uint64 {
 }
 
 func walk(p string) report {
+	if result, found := pathCache.Get(p); found {
+		return result.(report)
+	}
+
 	dir, err := os.Open(p)
 	if err != nil {
 		log.Printf("Failed to open %s: %v", p, err)
@@ -65,6 +74,8 @@ func walk(p string) report {
 
 	result.computeRatios()
 
+	pathCache.Set(p, result, cache.DefaultExpiration)
+
 	return result
 }
 
@@ -81,6 +92,8 @@ func fmtPercent(ratio float64) string {
 
 func main() {
 	flag.Parse()
+
+	pathCache = cache.New(*cacheDuration, *cacheDuration)
 
 	if *stdout {
 		walk(*basePath).output(os.Stdout)
