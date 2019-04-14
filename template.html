@@ -14,7 +14,11 @@
       </tr>
       {{- range .Report}}
       <tr>
-        <td><a href="?path={{$.Path}}/{{.Name}}">{{.Name}}</a></td>
+        <td
+          style="background:
+          linear-gradient(90deg, #ddd {{.Percentage}}, #fff 0%)">
+           <a href="?path={{$.Path}}/{{.Name}}">{{.Name}}</a>
+        </td>
         <td>{{.Size}}</td>
         <td>{{.Percentage}}</td>
       </tr>
