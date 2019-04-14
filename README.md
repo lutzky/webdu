@@ -1,5 +1,7 @@
 # webdu
 
+[![Build Status](https://travis-ci.org/lutzky/webdu.svg?branch=master)](https://travis-ci.org/lutzky/webdu)
+[![codecov](https://codecov.io/gh/lutzky/webdu/branch/master/graph/badge.svg)](https://codecov.io/gh/lutzky/webdu)
 [![](https://images.microbadger.com/badges/version/lutzky/webdu.svg)](https://microbadger.com/images/lutzky/webdu "Get your own version badge on microbadger.com")
 [![](https://images.microbadger.com/badges/image/lutzky/webdu.svg)](https://microbadger.com/images/lutzky/webdu "Get your own image badge on microbadger.com")
 [![](https://img.shields.io/docker/cloud/automated/lutzky/webdu.svg)](https://hub.docker.com/r/lutzky/webdu/builds)
