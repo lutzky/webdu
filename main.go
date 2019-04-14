@@ -42,8 +42,10 @@ func (r report) sum() uint64 {
 }
 
 func walk(p string) report {
-	if result, found := pathCache.Get(p); found {
-		return result.(report)
+	if pathCache != nil {
+		if result, found := pathCache.Get(p); found {
+			return result.(report)
+		}
 	}
 
 	dir, err := os.Open(p)
@@ -74,7 +76,9 @@ func walk(p string) report {
 
 	result.computeRatios()
 
-	pathCache.Set(p, result, cache.DefaultExpiration)
+	if pathCache != nil {
+		pathCache.Set(p, result, cache.DefaultExpiration)
+	}
 
 	return result
 }
@@ -100,7 +104,7 @@ func main() {
 		return
 	}
 
-	http.HandleFunc("/", handler)
+	http.Handle("/", handler{basePath: *basePath})
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), nil))
 }
 
@@ -123,12 +127,16 @@ func (r report) humanize() humanReport {
 	return result
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+type handler struct {
+	basePath string
+}
+
+func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	requestedPath := r.FormValue("path")
 	if requestedPath == "" {
 		requestedPath = "/"
 	}
-	actualPath := path.Join(*basePath, requestedPath)
+	actualPath := path.Join(h.basePath, requestedPath)
 	rep := walk(actualPath).humanize()
 
 	err := tmpl.Execute(w, struct {
