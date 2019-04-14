@@ -2,6 +2,8 @@
 
 [![](https://images.microbadger.com/badges/version/lutzky/webdu.svg)](https://microbadger.com/images/lutzky/webdu "Get your own version badge on microbadger.com")
 [![](https://images.microbadger.com/badges/image/lutzky/webdu.svg)](https://microbadger.com/images/lutzky/webdu "Get your own image badge on microbadger.com")
+[![](https://img.shields.io/docker/cloud/automated/lutzky/webdu.svg)](https://hub.docker.com/r/lutzky/webdu/builds)
+[![](https://img.shields.io/docker/cloud/build/lutzky/webdu.svg)](https://hub.docker.com/r/lutzky/webdu/builds)
 
 WebDU is a simple web interface for disk usage.
 
