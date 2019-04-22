@@ -137,16 +137,18 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		requestedPath = "/"
 	}
 	actualPath := path.Join(h.basePath, requestedPath)
-	rep := walk(actualPath).humanize()
+	rep := walk(actualPath)
 
 	err := tmpl.Execute(w, struct {
 		Parent string
 		Path   string
 		Report humanReport
+		Total  string
 	}{
 		Path:   requestedPath,
 		Parent: path.Dir(requestedPath),
-		Report: rep,
+		Report: rep.humanize(),
+		Total:  humanize.Bytes(rep.sum()),
 	})
 	if err != nil {
 		log.Printf("Internal error: %v", err)
