@@ -1,4 +1,4 @@
-module webdu
+module github.com/lutzky/webdu
 
 go 1.12
 
