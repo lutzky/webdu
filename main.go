@@ -108,7 +108,10 @@ func main() {
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), nil))
 }
 
-var tmpl = template.Must(template.ParseFiles("template.html"))
+var (
+	headerTemplate = template.Must(template.ParseFiles("header.html"))
+	tableTemplate  = template.Must(template.ParseFiles("table.html"))
+)
 
 type humanReport []struct {
 	Name       string
@@ -136,12 +139,31 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if requestedPath == "" {
 		requestedPath = "/"
 	}
+	flusher := w.(http.Flusher)
+	if flusher == nil {
+		log.Println("Flusher not available for chunked encoding")
+	}
 	actualPath := path.Join(h.basePath, requestedPath)
+
+	err := headerTemplate.Execute(w, struct {
+		Path string
+	}{
+		Path: requestedPath,
+	})
+	if err != nil {
+		log.Printf("Internal error: %v", err)
+		http.Error(w, "Internal server error (see log)", http.StatusInternalServerError)
+	}
+
+	if flusher != nil {
+		flusher.Flush()
+	}
+
 	rep := walk(actualPath)
 
-	err := tmpl.Execute(w, struct {
-		Parent string
+	err = tableTemplate.Execute(w, struct {
 		Path   string
+		Parent string
 		Report humanReport
 		Total  string
 	}{
