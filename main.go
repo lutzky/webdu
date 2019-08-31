@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"html/template"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -17,10 +19,11 @@ import (
 )
 
 var (
-	stdout        = flag.Bool("stdout", false, "Output root dir to stdout and quit")
-	basePath      = flag.String("base_path", ".", "Base path")
-	port          = flag.Int("port", 8099, "Listening port")
-	cacheDuration = flag.Duration("cache_duration", 30*time.Second, "Cache duration")
+	stdout         = flag.Bool("stdout", false, "Output root dir to stdout and quit")
+	basePath       = flag.String("base_path", ".", "Base path")
+	port           = flag.Int("port", 8099, "Listening port")
+	cacheDuration  = flag.Duration("cache_duration", 30*time.Second, "Cache duration")
+	apologyTimeout = flag.Duration("apology_timeout", 2*time.Second, "Time after which to show 'this is taking a while'")
 )
 
 var pathCache *cache.Cache
@@ -159,22 +162,44 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		flusher.Flush()
 	}
 
-	rep := walk(actualPath)
+	ctx, cancel := context.WithCancel(r.Context())
 
-	err = tableTemplate.Execute(w, struct {
-		Path   string
-		Parent string
-		Report humanReport
-		Total  string
-	}{
-		Path:   requestedPath,
-		Parent: path.Dir(requestedPath),
-		Report: rep.humanize(),
-		Total:  humanize.Bytes(rep.sum()),
-	})
-	if err != nil {
-		log.Printf("Internal error: %v", err)
-		http.Error(w, "Internal server error (see log)", http.StatusInternalServerError)
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		rep := walk(actualPath)
+		cancel()
+
+		err = tableTemplate.Execute(w, struct {
+			Path   string
+			Parent string
+			Report humanReport
+			Total  string
+		}{
+			Path:   requestedPath,
+			Parent: path.Dir(requestedPath),
+			Report: rep.humanize(),
+			Total:  humanize.Bytes(rep.sum()),
+		})
+		if err != nil {
+			log.Printf("Internal error: %v", err)
+			http.Error(w, "Internal server error (see log)", http.StatusInternalServerError)
+		}
+	}()
+
+	select {
+	case <-time.After(*apologyTimeout):
+		fmt.Fprintln(w, "<p>Please wait, caches are cold...</p>")
+		if flusher != nil {
+			flusher.Flush()
+		}
+	case <-ctx.Done():
+		if flusher != nil {
+			flusher.Flush()
+		}
 	}
 }
 
