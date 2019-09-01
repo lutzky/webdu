@@ -138,6 +138,7 @@ type handler struct {
 }
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var wm sync.Mutex
 	requestedPath := r.FormValue("path")
 	if requestedPath == "" {
 		requestedPath = "/"
@@ -148,6 +149,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	actualPath := path.Join(h.basePath, requestedPath)
 
+	wm.Lock()
 	err := headerTemplate.Execute(w, struct {
 		Path string
 	}{
@@ -161,6 +163,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if flusher != nil {
 		flusher.Flush()
 	}
+	wm.Unlock()
 
 	ctx, cancel := context.WithCancel(r.Context())
 
@@ -173,6 +176,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rep := walk(actualPath)
 		cancel()
 
+		wm.Lock()
 		err = tableTemplate.Execute(w, struct {
 			Path   string
 			Parent string
@@ -188,18 +192,18 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Internal error: %v", err)
 			http.Error(w, "Internal server error (see log)", http.StatusInternalServerError)
 		}
+		wm.Unlock()
 	}()
 
 	select {
 	case <-time.After(*apologyTimeout):
+		wm.Lock()
 		fmt.Fprintln(w, "<p>Please wait, caches are cold...</p>")
 		if flusher != nil {
 			flusher.Flush()
 		}
+		wm.Unlock()
 	case <-ctx.Done():
-		if flusher != nil {
-			flusher.Flush()
-		}
 	}
 }
 
