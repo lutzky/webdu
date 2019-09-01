@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-test/deep"
 )
@@ -29,32 +30,45 @@ func TestWalk(t *testing.T) {
 }
 
 func TestHTTP(t *testing.T) {
-	const goldenFile = "testdata/want.html"
-
-	ts := httptest.NewServer(handler{"testdata/base_path"})
-	defer ts.Close()
-
-	res, err := http.Get(ts.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	got, err := ioutil.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		t.Fatal(err)
+	testCases := []struct {
+		goldenFile     string
+		artificalDelay time.Duration
+	}{
+		{"testdata/want.html", 0},
+		{"testdata/want_slow.html", 3 * time.Second},
 	}
 
-	if *update {
-		ioutil.WriteFile(goldenFile, got, 0644)
-	}
+	for _, tc := range testCases {
+		t.Run(tc.goldenFile, func(t *testing.T) {
+			ts := httptest.NewServer(handler{
+				basePath:       "testdata/base_path",
+				artificalDelay: tc.artificalDelay,
+			})
+			defer ts.Close()
 
-	want, err := ioutil.ReadFile(goldenFile)
-	if err != nil {
-		t.Fatalf("Couldn't read golden file: %v", err)
-	}
+			res, err := http.Get(ts.URL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got, err := ioutil.ReadAll(res.Body)
+			res.Body.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	if string(want) != string(got) {
-		t.Errorf("%s doesn't match; run with -update and use git diff", goldenFile)
+			if *update {
+				ioutil.WriteFile(tc.goldenFile, got, 0644)
+			}
+
+			want, err := ioutil.ReadFile(tc.goldenFile)
+			if err != nil {
+				t.Fatalf("Couldn't read golden file: %v", err)
+			}
+
+			if string(want) != string(got) {
+				t.Errorf("%s doesn't match; run with -update and use git diff", tc.goldenFile)
+			}
+		})
 	}
 }
 

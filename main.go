@@ -134,7 +134,8 @@ func (r report) humanize() humanReport {
 }
 
 type handler struct {
-	basePath string
+	basePath       string
+	artificalDelay time.Duration
 }
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -174,6 +175,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 		rep := walk(actualPath)
+		time.Sleep(h.artificalDelay)
 		cancel()
 
 		wm.Lock()
