@@ -9,6 +9,10 @@
 
 WebDU is a simple web interface for disk usage.
 
+## Screenshot
+
+![Screenshot](screenshot.png)
+
 ## Usage
 
 Some variables to make the example simpler:
