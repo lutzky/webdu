@@ -8,4 +8,5 @@ FROM scratch
 COPY --from=build-env /src/header.html /
 COPY --from=build-env /src/table.html /
 COPY --from=build-env /src/webdu /
+EXPOSE 8099
 ENTRYPOINT ["/webdu"]
