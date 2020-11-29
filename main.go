@@ -176,7 +176,7 @@ func (r report) humanize() humanReport {
 	result := make(humanReport, len(r))
 
 	for i := range r {
-		result[i].Name = r[i].name
+		result[i].Name = filepath.Base(r[i].name)
 		result[i].Percentage = fmtPercent(r[i].ratio)
 		result[i].Size = humanize.Bytes(r[i].bytes)
 	}
