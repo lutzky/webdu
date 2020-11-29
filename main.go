@@ -29,9 +29,10 @@ var (
 var pathCache *cache.Cache
 
 type reportEntry struct {
-	name  string
-	bytes uint64
-	ratio float64
+	name    string
+	bytes   uint64
+	ratio   float64
+	subdirs report
 }
 
 type report []reportEntry
@@ -69,7 +70,8 @@ func walk(p string) report {
 	for i, file := range files {
 		result[i].name = file.Name()
 		if file.IsDir() {
-			result[i].bytes = walk(path.Join(p, file.Name())).sum()
+			result[i].subdirs = walk(path.Join(p, file.Name()))
+			result[i].bytes = result[i].subdirs.sum()
 		} else {
 			result[i].bytes = uint64(file.Size())
 		}

@@ -16,9 +16,11 @@ import (
 var update = flag.Bool("update", false, "Update golden test files")
 
 var wantReport = report{
-	{"a", 2, float64(2) / 9},
-	{"b", 3, float64(3) / 9},
-	{"c", 4, float64(4) / 9},
+	{"a", 2, float64(2) / 9, nil},
+	{"b", 3, float64(3) / 9, nil},
+	{"c", 4, float64(4) / 9, report{
+		{"d", 4, 1, nil},
+	}},
 }
 
 func TestWalk(t *testing.T) {
