@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"sync"
 	"time"
@@ -37,6 +38,52 @@ type reportEntry struct {
 
 type report []reportEntry
 
+type plotlyData struct {
+	IDs     []string `json:"ids"`
+	Labels  []string `json:"labels"`
+	Parents []string `json:"parents"`
+	Values  []uint64 `json:"values"`
+	Type    string   `json:"type"`
+}
+
+func (r report) toParentsAndValues(parent string, parents map[string]string, values map[string]uint64) {
+	for _, re := range r {
+		parents[re.name] = parent
+		if re.subdirs == nil {
+			values[re.name] = re.bytes
+		} else {
+			re.subdirs.toParentsAndValues(re.name, parents, values)
+		}
+	}
+}
+
+func (r report) toPlotlyData() plotlyData {
+	var result = plotlyData{Type: "sunburst"}
+
+	parents := map[string]string{}
+	values := map[string]uint64{}
+
+	r.toParentsAndValues("", parents, values)
+
+	result.IDs = make([]string, 0, len(parents))
+	for k := range parents {
+		result.IDs = append(result.IDs, k)
+	}
+	sort.Strings(result.IDs)
+
+	result.Labels = make([]string, len(parents))
+	result.Parents = make([]string, len(parents))
+	result.Values = make([]uint64, len(parents))
+
+	for i, id := range result.IDs {
+		result.Labels[i] = filepath.Base(id)
+		result.Parents[i] = parents[id]
+		result.Values[i] = values[id]
+	}
+
+	return result
+}
+
 func (r report) sum() uint64 {
 	var result uint64
 	for _, re := range r {
@@ -45,7 +92,8 @@ func (r report) sum() uint64 {
 	return result
 }
 
-func walk(p string) report {
+func walk(basePath, subPath string) report {
+	p := filepath.Join(basePath, subPath)
 	if pathCache != nil {
 		if result, found := pathCache.Get(p); found {
 			return result.(report)
@@ -68,9 +116,9 @@ func walk(p string) report {
 	result := make(report, len(files))
 
 	for i, file := range files {
-		result[i].name = file.Name()
+		result[i].name = filepath.Join(subPath, file.Name())
 		if file.IsDir() {
-			result[i].subdirs = walk(path.Join(p, file.Name()))
+			result[i].subdirs = walk(basePath, path.Join(subPath, file.Name()))
 			result[i].bytes = result[i].subdirs.sum()
 		} else {
 			result[i].bytes = uint64(file.Size())
@@ -105,7 +153,7 @@ func main() {
 	pathCache = cache.New(*cacheDuration, *cacheDuration)
 
 	if *stdout {
-		walk(*basePath).output(os.Stdout)
+		walk(*basePath, "").output(os.Stdout)
 		return
 	}
 
@@ -176,21 +224,23 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		rep := walk(actualPath)
+		rep := walk(actualPath, "")
 		time.Sleep(h.artificalDelay)
 		cancel()
 
 		wm.Lock()
 		err = tableTemplate.Execute(w, struct {
-			Path   string
-			Parent string
-			Report humanReport
-			Total  string
+			Path       string
+			Parent     string
+			Report     humanReport
+			PlotlyData plotlyData
+			Total      string
 		}{
-			Path:   requestedPath,
-			Parent: path.Dir(requestedPath),
-			Report: rep.humanize(),
-			Total:  humanize.Bytes(rep.sum()),
+			Path:       requestedPath,
+			Parent:     path.Dir(requestedPath),
+			Report:     rep.humanize(),
+			PlotlyData: rep.toPlotlyData(),
+			Total:      humanize.Bytes(rep.sum()),
 		})
 		if err != nil {
 			log.Printf("Internal error: %v", err)

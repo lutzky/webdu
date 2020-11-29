@@ -19,12 +19,30 @@ var wantReport = report{
 	{"a", 2, float64(2) / 9, nil},
 	{"b", 3, float64(3) / 9, nil},
 	{"c", 4, float64(4) / 9, report{
-		{"d", 4, 1, nil},
+		{"c/d", 4, 1, nil},
 	}},
 }
 
+var wantPlotlyData = plotlyData{
+	IDs:     []string{"a", "b", "c", "c/d"},
+	Labels:  []string{"a", "b", "c", "d"},
+	Parents: []string{"", "", "", "c"},
+	Values:  []uint64{2, 3, 0, 4},
+	Type:    "sunburst",
+}
+
+func TestToPlotlyReport(t *testing.T) {
+	got := wantReport.toPlotlyData()
+
+	if diff := cmp.Diff(wantPlotlyData, got,
+		cmp.AllowUnexported(plotlyData{}),
+	); diff != "" {
+		t.Errorf("diff -want +got:\n%s", diff)
+	}
+}
+
 func TestWalk(t *testing.T) {
-	got := walk("testdata/base_path")
+	got := walk("testdata/base_path", "")
 
 	if diff := cmp.Diff(wantReport, got,
 		cmp.AllowUnexported(reportEntry{}),
