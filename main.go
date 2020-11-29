@@ -226,6 +226,10 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		defer wg.Done()
 		rep := walk(actualPath, "")
 		time.Sleep(h.artificalDelay)
+		var plotly plotlyData
+		if r.FormValue("plotly") == "1" {
+			plotly = rep.toPlotlyData()
+		}
 		cancel()
 
 		wm.Lock()
@@ -239,7 +243,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Path:       requestedPath,
 			Parent:     path.Dir(requestedPath),
 			Report:     rep.humanize(),
-			PlotlyData: rep.toPlotlyData(),
+			PlotlyData: plotly,
 			Total:      humanize.Bytes(rep.sum()),
 		})
 		if err != nil {

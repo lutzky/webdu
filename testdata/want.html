@@ -45,13 +45,15 @@
         <td>9 B</td>
         <td>100%</td>
     </table>
-    <div id="sunburst" style="width: 100%; height: 100%;"></div>
-    <script>
-      sunburst = document.getElementById('sunburst');
-      var data = [
-        {"ids":["a","b","c","c/d"],"labels":["a","b","c","d"],"parents":["","","","c"],"values":[2,3,0,4],"type":"sunburst"}
-      ];
-      Plotly.newPlot(sunburst, data, { margin: {t:0} });
-    </script>
+    
+      <div id="sunburst" style="width: 100%; height: 100%;"></div>
+      <script>
+        sunburst = document.getElementById('sunburst');
+        var data = [
+          {"ids":["a","b","c","c/d"],"labels":["a","b","c","d"],"parents":["","","","c"],"values":[2,3,0,4],"type":"sunburst"}
+        ];
+        Plotly.newPlot(sunburst, data, { margin: {t:0} });
+      </script>
+    
   </body>
 </html>

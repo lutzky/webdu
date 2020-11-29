@@ -69,7 +69,7 @@ func TestHTTP(t *testing.T) {
 			})
 			defer ts.Close()
 
-			res, err := http.Get(ts.URL)
+			res, err := http.Get(ts.URL + "?plotly=1")
 			if err != nil {
 				t.Fatal(err)
 			}
