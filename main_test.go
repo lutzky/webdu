@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/go-test/deep"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 var update = flag.Bool("update", false, "Update golden test files")
@@ -24,8 +24,11 @@ var wantReport = report{
 func TestWalk(t *testing.T) {
 	got := walk("testdata/base_path")
 
-	if diff := deep.Equal(got, wantReport); diff != nil {
-		t.Error(strings.Join(diff, "\n"))
+	if diff := cmp.Diff(wantReport, got,
+		cmp.AllowUnexported(reportEntry{}),
+		cmpopts.SortSlices(func(x, y reportEntry) bool { return x.name < y.name }),
+	); diff != "" {
+		t.Errorf("diff -want +got:\n%s", diff)
 	}
 }
 
