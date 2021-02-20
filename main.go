@@ -192,6 +192,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	actualPath := path.Join(h.basePath, requestedPath)
+	var loadD3 = false
 
 	if r.FormValue("json") != "" {
 		w.Header().Add("Content-Type", "text/json")
@@ -204,6 +205,9 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	if r.FormValue("d3") != "" {
+		loadD3 = true
+	}
 
 	flusher := w.(http.Flusher)
 	if flusher == nil {
@@ -212,9 +216,11 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	wm.Lock()
 	err := templates.ExecuteTemplate(w, "header.html", struct {
-		Path string
+		Path   string
+		LoadD3 bool
 	}{
-		Path: requestedPath,
+		Path:   requestedPath,
+		LoadD3: loadD3,
 	})
 	if err != nil {
 		log.Printf("Internal error: %v", err)
@@ -237,7 +243,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rep := walk(actualPath, "")
 		time.Sleep(h.artificalDelay)
 		var d3 d3Data
-		if r.FormValue("d3") == "1" {
+		if loadD3 {
 			d3 = rep.toD3Data(requestedPath)
 		}
 		cancel()

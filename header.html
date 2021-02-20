@@ -2,7 +2,9 @@
 <html>
   <head>
     <title>WebDU</title>
+    {{- if .LoadD3 }}
     <script src="https://d3js.org/d3.v6.min.js"></script>
+    {{ end -}}
     <meta name="viewport" content="width=device-width, inital-scale=1">
   </head>
   <body>
