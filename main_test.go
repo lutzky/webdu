@@ -16,19 +16,53 @@ import (
 var update = flag.Bool("update", false, "Update golden test files")
 
 var wantReport = report{
-	{"a", 2, float64(2) / 9, nil},
-	{"b", 3, float64(3) / 9, nil},
-	{"c", 4, float64(4) / 9, report{
-		{"c/d", 4, 1, nil},
-	}},
+	{
+		name:  "a",
+		bytes: 2,
+		ratio: float64(2) / 9,
+	},
+	{
+		name:  "b",
+		bytes: 3,
+		ratio: float64(3) / 9,
+	},
+	{
+		name:  "c",
+		bytes: 4,
+		ratio: float64(4) / 9,
+		isDir: true,
+		subdirs: report{
+			{
+				name:  "c/d",
+				bytes: 4,
+				ratio: 1,
+			},
+		},
+	},
+	{
+		name:    "emptyDir",
+		bytes:   0,
+		ratio:   0,
+		isDir:   true,
+		subdirs: report{},
+	},
 }
 
 var wantPlotlyData = plotlyData{
-	IDs:     []string{"a", "b", "c", "c/d"},
-	Labels:  []string{"a", "b", "c", "d"},
-	Parents: []string{"", "", "", "c"},
-	Values:  []uint64{2, 3, 0, 4},
+	IDs:     []string{"a", "b", "c", "c/d", "emptyDir"},
+	Labels:  []string{"a", "b", "c", "d", "emptyDir"},
+	Parents: []string{"", "", "", "c", ""},
+	Values:  []uint64{2, 3, 0, 4, 0},
 	Type:    "sunburst",
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+
+	// Git does not store empty directories, so we must create it manually
+	os.MkdirAll("testdata/base_path/emptyDir", 0750)
+
+	os.Exit(m.Run())
 }
 
 func TestToPlotlyReport(t *testing.T) {
@@ -102,4 +136,5 @@ func Example_output() {
 	// a 22.2% 2 B
 	// b 33.3% 3 B
 	// c 44.4% 4 B
+	// emptyDir 0.0% 0 B
 }

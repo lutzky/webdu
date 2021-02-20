@@ -35,6 +35,7 @@ type reportEntry struct {
 	bytes   uint64
 	ratio   float64
 	subdirs report
+	isDir   bool
 }
 
 type report []reportEntry
@@ -118,6 +119,7 @@ func walk(basePath, subPath string) report {
 
 	for i, file := range files {
 		result[i].name = filepath.Join(subPath, file.Name())
+		result[i].isDir = file.IsDir()
 		if file.IsDir() {
 			result[i].subdirs = walk(basePath, path.Join(subPath, file.Name()))
 			result[i].bytes = result[i].subdirs.sum()
@@ -170,6 +172,7 @@ type humanReport []struct {
 	Name       string
 	Percentage string
 	Size       string
+	IsDir      bool
 }
 
 func (r report) humanize() humanReport {
@@ -179,6 +182,7 @@ func (r report) humanize() humanReport {
 		result[i].Name = filepath.Base(r[i].name)
 		result[i].Percentage = fmtPercent(r[i].ratio)
 		result[i].Size = humanize.Bytes(r[i].bytes)
+		result[i].IsDir = r[i].isDir
 	}
 	return result
 }

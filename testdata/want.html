@@ -14,31 +14,44 @@
         <td>&nbsp;</td>
       </tr>
       <tr>
-        <td
-          style="background:
-          linear-gradient(90deg, #ddd 44.4%, #fff 0%)">
-           <a href="?path=%2f/c">c</a>
+        <td style="background:
+                  linear-gradient(90deg, #ddd 44.4%, #fff 0%)">
+           <a href="?path=%2f/c">
+           c
+           </a>
         </td>
         <td>4 B</td>
         <td>44.4%</td>
       </tr>
       <tr>
-        <td
-          style="background:
-          linear-gradient(90deg, #ddd 33.3%, #fff 0%)">
-           <a href="?path=%2f/b">b</a>
+        <td style="background:
+                  linear-gradient(90deg, #ddd 33.3%, #fff 0%)">
+           
+           b
+           
         </td>
         <td>3 B</td>
         <td>33.3%</td>
       </tr>
       <tr>
-        <td
-          style="background:
-          linear-gradient(90deg, #ddd 22.2%, #fff 0%)">
-           <a href="?path=%2f/a">a</a>
+        <td style="background:
+                  linear-gradient(90deg, #ddd 22.2%, #fff 0%)">
+           
+           a
+           
         </td>
         <td>2 B</td>
         <td>22.2%</td>
+      </tr>
+      <tr>
+        <td style="background:
+                  linear-gradient(90deg, #ddd 0.0%, #fff 0%)">
+           <a href="?path=%2f/emptyDir">
+           emptyDir
+           </a>
+        </td>
+        <td>0 B</td>
+        <td>0.0%</td>
       </tr>
       <tr>
         <td>Total</td>
@@ -50,7 +63,7 @@
       <script>
         sunburst = document.getElementById('sunburst');
         var data = [
-          {"ids":["a","b","c","c/d"],"labels":["a","b","c","d"],"parents":["","","","c"],"values":[2,3,0,4],"type":"sunburst"}
+          {"ids":["a","b","c","c/d","emptyDir"],"labels":["a","b","c","d","emptyDir"],"parents":["","","","c",""],"values":[2,3,0,4,0],"type":"sunburst"}
         ];
         Plotly.newPlot(sunburst, data, { margin: {t:0} });
       </script>

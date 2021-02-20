@@ -6,10 +6,11 @@
       </tr>
       {{- range .Report}}
       <tr>
-        <td
-          style="background:
-          linear-gradient(90deg, #ddd {{.Percentage}}, #fff 0%)">
-           <a href="?path={{$.Path}}/{{.Name}}">{{.Name}}</a>
+        <td style="background:
+                  linear-gradient(90deg, #ddd {{.Percentage}}, #fff 0%)">
+           {{ if .IsDir }}<a href="?path={{$.Path}}/{{.Name}}">{{ end }}
+           {{.Name}}
+           {{ if .IsDir }}</a>{{ end }}
         </td>
         <td>{{.Size}}</td>
         <td>{{.Percentage}}</td>
