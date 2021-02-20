@@ -31,5 +31,14 @@
         Plotly.newPlot(sunburst, data, { margin: {t:0} });
       </script>
     {{ end }}
+    {{ if .D3Data.Name }}
+      <h1>Zoomable icicle diagram</h1>
+      <script>
+        const data = {{ .D3Data }};
+      </script>
+      <script src="/static/icicle.js"></script>
+    {{ else }}
+      <a href="javascript:document.location.search += '&d3=1'">Show icicle diagram</a>
+    {{ end }}
   </body>
 </html>

@@ -2,11 +2,13 @@
 <html>
   <head>
     <title>WebDU</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-1.57.1.min.js"></script>
     <meta name="viewport" content="width=device-width, inital-scale=1">
   </head>
   <body>
     <h1>WebDU - /</h1>
+    <a href="javascript:document.location.search += '&json=1'">Get as JSON</a>
     <table>
       <tr>
         <td><a href="?path=%2f">..</a></td>
@@ -67,6 +69,9 @@
         ];
         Plotly.newPlot(sunburst, data, { margin: {t:0} });
       </script>
+    
+    
+      <a href="javascript:document.location.search += '&d3=1'">Show icicle diagram</a>
     
   </body>
 </html>

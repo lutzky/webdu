@@ -183,6 +183,7 @@ func main() {
 		return
 	}
 
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticFiles))))
 	http.Handle("/", handler{basePath: *basePath})
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), nil))
 }
@@ -190,6 +191,9 @@ func main() {
 //go:embed header.html table.html
 var templateFiles embed.FS
 var templates = template.Must(template.ParseFS(templateFiles, "*.html"))
+
+//go:embed icicle.js
+var staticFiles embed.FS
 
 type humanReport []struct {
 	Name       string
@@ -268,8 +272,12 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rep := walk(actualPath, "")
 		time.Sleep(h.artificalDelay)
 		var plotly plotlyData
+		var d3 d3Data
 		if r.FormValue("plotly") == "1" {
 			plotly = rep.toPlotlyData()
+		}
+		if r.FormValue("d3") == "1" {
+			d3 = rep.toD3Data(requestedPath)
 		}
 		cancel()
 
@@ -279,12 +287,14 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Parent     string
 			Report     humanReport
 			PlotlyData plotlyData
+			D3Data     d3Data
 			Total      string
 		}{
 			Path:       requestedPath,
 			Parent:     path.Dir(requestedPath),
 			Report:     rep.humanize(),
 			PlotlyData: plotly,
+			D3Data:     d3,
 			Total:      humanize.Bytes(rep.sum()),
 		})
 		if err != nil {
