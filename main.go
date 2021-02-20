@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"embed"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"html/template"
@@ -48,6 +49,12 @@ type plotlyData struct {
 	Type    string   `json:"type"`
 }
 
+type d3Data struct {
+	Name     string   `json:"name"`
+	Value    uint64   `json:"value,omitempty"`
+	Children []d3Data `json:"children,omitempty"`
+}
+
 func (r report) toParentsAndValues(parent string, parents map[string]string, values map[string]uint64) {
 	for _, re := range r {
 		parents[re.name] = parent
@@ -81,6 +88,22 @@ func (r report) toPlotlyData() plotlyData {
 		result.Labels[i] = filepath.Base(id)
 		result.Parents[i] = parents[id]
 		result.Values[i] = values[id]
+	}
+
+	return result
+}
+
+func (r report) toD3Data(name string) d3Data {
+	var result = d3Data{Name: name}
+	for _, child := range r {
+		var entry d3Data
+		if len(child.subdirs) == 0 {
+			entry.Name = child.name
+			entry.Value = child.bytes
+		} else {
+			entry = child.subdirs.toD3Data(child.name)
+		}
+		result.Children = append(result.Children, entry)
 	}
 
 	return result
@@ -198,11 +221,25 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if requestedPath == "" {
 		requestedPath = "/"
 	}
+
+	actualPath := path.Join(h.basePath, requestedPath)
+
+	if r.FormValue("json") != "" {
+		w.Header().Add("Content-Type", "text/json")
+		rep := walk(actualPath, "").toD3Data(requestedPath)
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(rep); err != nil {
+			log.Printf("Internal error: %v", err)
+			http.Error(w, "Internal server error (see log)", http.StatusInternalServerError)
+		}
+		return
+	}
+
 	flusher := w.(http.Flusher)
 	if flusher == nil {
 		log.Println("Flusher not available for chunked encoding")
 	}
-	actualPath := path.Join(h.basePath, requestedPath)
 
 	wm.Lock()
 	err := templates.ExecuteTemplate(w, "header.html", struct {
