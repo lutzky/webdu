@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"flag"
 	"fmt"
 	"html/template"
@@ -161,10 +162,9 @@ func main() {
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), nil))
 }
 
-var (
-	headerTemplate = template.Must(template.ParseFiles("header.html"))
-	tableTemplate  = template.Must(template.ParseFiles("table.html"))
-)
+//go:embed header.html table.html
+var templateFiles embed.FS
+var templates = template.Must(template.ParseFS(templateFiles, "*.html"))
 
 type humanReport []struct {
 	Name       string
@@ -201,7 +201,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	actualPath := path.Join(h.basePath, requestedPath)
 
 	wm.Lock()
-	err := headerTemplate.Execute(w, struct {
+	err := templates.ExecuteTemplate(w, "header.html", struct {
 		Path string
 	}{
 		Path: requestedPath,
@@ -233,7 +233,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		cancel()
 
 		wm.Lock()
-		err = tableTemplate.Execute(w, struct {
+		err = templates.ExecuteTemplate(w, "table.html", struct {
 			Path       string
 			Parent     string
 			Report     humanReport

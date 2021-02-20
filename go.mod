@@ -1,6 +1,6 @@
 module github.com/lutzky/webdu
 
-go 1.12
+go 1.16
 
 require (
 	github.com/dustin/go-humanize v1.0.0
