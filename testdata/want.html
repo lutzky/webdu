@@ -3,7 +3,6 @@
   <head>
     <title>WebDU</title>
     <script src="https://d3js.org/d3.v6.min.js"></script>
-    <script src="https://cdn.plot.ly/plotly-1.57.1.min.js"></script>
     <meta name="viewport" content="width=device-width, inital-scale=1">
   </head>
   <body>
@@ -61,17 +60,11 @@
         <td>100%</td>
     </table>
     
-      <div id="sunburst" style="width: 100%; height: 100%;"></div>
+      <h1>Zoomable icicle diagram</h1>
       <script>
-        sunburst = document.getElementById('sunburst');
-        var data = [
-          {"ids":["a","b","c","c/d","emptyDir"],"labels":["a","b","c","d","emptyDir"],"parents":["","","","c",""],"values":[2,3,0,4,0],"type":"sunburst"}
-        ];
-        Plotly.newPlot(sunburst, data, { margin: {t:0} });
+        const data = {"name":"/","children":[{"name":"c","children":[{"name":"c/d","value":4}]},{"name":"b","value":3},{"name":"a","value":2},{"name":"emptyDir"}]};
       </script>
-    
-    
-      <a href="javascript:document.location.search += '&d3=1'">Show icicle diagram</a>
+      <script src="/static/icicle.js"></script>
     
   </body>
 </html>

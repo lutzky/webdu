@@ -48,12 +48,16 @@ var wantReport = report{
 	},
 }
 
-var wantPlotlyData = plotlyData{
-	IDs:     []string{"a", "b", "c", "c/d", "emptyDir"},
-	Labels:  []string{"a", "b", "c", "d", "emptyDir"},
-	Parents: []string{"", "", "", "c", ""},
-	Values:  []uint64{2, 3, 0, 4, 0},
-	Type:    "sunburst",
+var wantD3Data = d3Data{
+	Name: "/",
+	Children: []d3Data{
+		{Name: "a", Value: 2},
+		{Name: "b", Value: 3},
+		{Name: "c", Children: []d3Data{
+			{Name: "c/d", Value: 4},
+		}},
+		{Name: "emptyDir"},
+	},
 }
 
 func TestMain(m *testing.M) {
@@ -65,11 +69,11 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestToPlotlyReport(t *testing.T) {
-	got := wantReport.toPlotlyData()
+func TestToD3Data(t *testing.T) {
+	got := wantReport.toD3Data("/")
 
-	if diff := cmp.Diff(wantPlotlyData, got,
-		cmp.AllowUnexported(plotlyData{}),
+	if diff := cmp.Diff(wantD3Data, got,
+		cmp.AllowUnexported(d3Data{}),
 	); diff != "" {
 		t.Errorf("diff -want +got:\n%s", diff)
 	}
@@ -103,7 +107,7 @@ func TestHTTP(t *testing.T) {
 			})
 			defer ts.Close()
 
-			res, err := http.Get(ts.URL + "?plotly=1")
+			res, err := http.Get(ts.URL + "?d3=1")
 			if err != nil {
 				t.Fatal(err)
 			}

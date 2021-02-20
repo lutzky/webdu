@@ -41,14 +41,6 @@ type reportEntry struct {
 
 type report []reportEntry
 
-type plotlyData struct {
-	IDs     []string `json:"ids"`
-	Labels  []string `json:"labels"`
-	Parents []string `json:"parents"`
-	Values  []uint64 `json:"values"`
-	Type    string   `json:"type"`
-}
-
 type d3Data struct {
 	Name     string   `json:"name"`
 	Value    uint64   `json:"value,omitempty"`
@@ -64,33 +56,6 @@ func (r report) toParentsAndValues(parent string, parents map[string]string, val
 			re.subdirs.toParentsAndValues(re.name, parents, values)
 		}
 	}
-}
-
-func (r report) toPlotlyData() plotlyData {
-	var result = plotlyData{Type: "sunburst"}
-
-	parents := map[string]string{}
-	values := map[string]uint64{}
-
-	r.toParentsAndValues("", parents, values)
-
-	result.IDs = make([]string, 0, len(parents))
-	for k := range parents {
-		result.IDs = append(result.IDs, k)
-	}
-	sort.Strings(result.IDs)
-
-	result.Labels = make([]string, len(parents))
-	result.Parents = make([]string, len(parents))
-	result.Values = make([]uint64, len(parents))
-
-	for i, id := range result.IDs {
-		result.Labels[i] = filepath.Base(id)
-		result.Parents[i] = parents[id]
-		result.Values[i] = values[id]
-	}
-
-	return result
 }
 
 func (r report) toD3Data(name string) d3Data {
@@ -271,11 +236,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		defer wg.Done()
 		rep := walk(actualPath, "")
 		time.Sleep(h.artificalDelay)
-		var plotly plotlyData
 		var d3 d3Data
-		if r.FormValue("plotly") == "1" {
-			plotly = rep.toPlotlyData()
-		}
 		if r.FormValue("d3") == "1" {
 			d3 = rep.toD3Data(requestedPath)
 		}
@@ -283,19 +244,17 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		wm.Lock()
 		err = templates.ExecuteTemplate(w, "table.html", struct {
-			Path       string
-			Parent     string
-			Report     humanReport
-			PlotlyData plotlyData
-			D3Data     d3Data
-			Total      string
+			Path   string
+			Parent string
+			Report humanReport
+			D3Data d3Data
+			Total  string
 		}{
-			Path:       requestedPath,
-			Parent:     path.Dir(requestedPath),
-			Report:     rep.humanize(),
-			PlotlyData: plotly,
-			D3Data:     d3,
-			Total:      humanize.Bytes(rep.sum()),
+			Path:   requestedPath,
+			Parent: path.Dir(requestedPath),
+			Report: rep.humanize(),
+			D3Data: d3,
+			Total:  humanize.Bytes(rep.sum()),
 		})
 		if err != nil {
 			log.Printf("Internal error: %v", err)
