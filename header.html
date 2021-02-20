@@ -6,6 +6,12 @@
     <script src="https://d3js.org/d3.v6.min.js"></script>
     {{ end -}}
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+      if (document.location.pathname.slice(-1) != "/") {
+        {{- /* For relative URLs to work (static/* in table.html)*/}}
+        document.location.pathname += "/";
+      }
+    </script>
   </head>
   <body>
     <h1>WebDU - {{.Path}}</h1>
