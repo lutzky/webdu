@@ -28,7 +28,13 @@ jobs:
     - name: Build
       run: go build -v ./...
 
-    - name: Test
+    - name: Simple test
+      run: go test -v ./...
+
+    - name: Flakiness test
+      run: go test -count=100 -test.failfast ./...
+
+    - name: Test with coverage profile
       run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
     - name: Codecov
