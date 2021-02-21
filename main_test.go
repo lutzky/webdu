@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/jonboulle/clockwork"
 )
 
 var update = flag.Bool("update", false, "Update golden test files")
@@ -92,21 +93,44 @@ func TestWalk(t *testing.T) {
 
 func TestHTTP(t *testing.T) {
 	testCases := []struct {
-		goldenFile     string
-		artificalDelay time.Duration
+		goldenFile      string
+		artificialDelay time.Duration
+		waitForApology  bool
 	}{
-		{"testdata/want.html", 0},
-		{"testdata/want_slow.html", 3 * time.Second},
+		{goldenFile: "testdata/want.html", artificialDelay: 500 * time.Millisecond, waitForApology: false},
+		{goldenFile: "testdata/want_slow.html", artificialDelay: 5 * time.Second, waitForApology: true},
 	}
+
+	origClock := clock
+	defer func() { clock = origClock }()
 
 	for _, tc := range testCases {
 		t.Run(tc.goldenFile, func(t *testing.T) {
+			fakeClock := clockwork.NewFakeClock()
+			clock = fakeClock
 			ts := httptest.NewServer(handler{
-				basePath:       "testdata/base_path",
-				artificalDelay: tc.artificalDelay,
+				basePath:        "testdata/base_path",
+				artificialDelay: tc.artificialDelay,
 			})
 			defer ts.Close()
 
+			go func() {
+				t.Logf("Blocking for both clock.After(*apologyTimeout=%s) and clock.Sleep(%s)", *apologyTimeout, tc.artificialDelay)
+				fakeClock.BlockUntil(2)
+
+				if tc.waitForApology {
+					t.Logf("Advancing clock by apologyTimeout (%s)", *apologyTimeout)
+					fakeClock.Advance(*apologyTimeout)
+					t.Logf("clock.After(*apologyTimeout=%s) should trigger, clock.Sleep(%s) should still sleep", *apologyTimeout, tc.artificialDelay)
+					t.Logf("Blocking for apology to be done writing (clock.Sleep(%s) still sleeping)", tc.artificialDelay)
+					fakeClock.BlockUntil(2)
+					t.Logf("Apology now done writing, advancing to release clock.Sleep(%s)", tc.artificialDelay)
+					fakeClock.Advance(tc.artificialDelay)
+				} else {
+					t.Logf("Advancing clock by artificalDelay (%s)", tc.artificialDelay)
+					fakeClock.Advance(tc.artificialDelay)
+				}
+			}()
 			res, err := http.Get(ts.URL + "?d3=1")
 			if err != nil {
 				t.Fatal(err)

@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
+	"github.com/jonboulle/clockwork"
 	"github.com/patrickmn/go-cache"
 )
 
@@ -30,6 +31,8 @@ var (
 )
 
 var pathCache *cache.Cache
+
+var clock = clockwork.NewRealClock()
 
 type reportEntry struct {
 	name    string
@@ -180,8 +183,10 @@ func (r report) humanize() humanReport {
 }
 
 type handler struct {
-	basePath       string
-	artificalDelay time.Duration
+	basePath string
+
+	// For testing
+	artificialDelay time.Duration
 }
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -241,7 +246,9 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 		rep := walk(actualPath, "")
-		time.Sleep(h.artificalDelay)
+		if h.artificialDelay > 0 {
+			clock.Sleep(h.artificialDelay)
+		}
 		var d3 d3Data
 		if loadD3 {
 			d3 = rep.toD3Data(requestedPath)
@@ -270,13 +277,17 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	select {
-	case <-time.After(*apologyTimeout):
+	case <-clock.After(*apologyTimeout):
 		wm.Lock()
 		fmt.Fprintln(w, "<p>Please wait, caches are cold...</p>")
 		if flusher != nil {
 			flusher.Flush()
 		}
 		wm.Unlock()
+		if h.artificialDelay > 0 {
+			// Allow fakeClock to block until we're done writing apology
+			clock.Sleep(1 * time.Second)
+		}
 	case <-ctx.Done():
 	}
 }
